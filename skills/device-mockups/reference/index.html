@@ -1,0 +1,467 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>device-mockups · fictional reference</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #F7F4EE; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="kit.js"></script>
+<script src="product.js"></script>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
+<script type="module">
+// device-mockups: self-contained still compositions. Real captured screens, live licensed devices.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { buildPhone } from './devices.js'; // copied unchanged from engine/devices.js
+
+import { drawContact, drawLaptopContact } from './contact-shadow.js';
+const { clamp, lerp, loadFont, loadImage } = window.kit;
+
+const SIZES = { '16:9': [1920, 1080], '9:16': [1080, 1920] };
+const FAMILY = 'light', PRODUCT = window.mockupProduct;
+const OST = { ground: PRODUCT.ground, ink: PRODUCT.ink, line: PRODUCT.text.headline };
+const WHI = { ground: PRODUCT.ground, chalk: PRODUCT.ink, volt: PRODUCT.accent || '#F0F1F4', muted: PRODUCT.muted, line: [PRODUCT.text.headline, PRODUCT.text.headline2] };
+const D2R = Math.PI / 180, SS = 2;
+let W = 1920, H = 1080, TALL = false, DIR = 'L1';
+let VALUES = {}, TEXT_AUDIT = [], PLACEMENT_AUDIT = null, LAP_SCREEN;
+const canvas = document.getElementById('c');
+const g = canvas.getContext('2d', { willReadFrequently: true });
+const IMG = {};
+
+// ============================== 3D ==============================
+let LBEZEL, renderer, scene, camera, phone, phoneUnit, laptop, hinge, lid, LGLASS, screenCanvas, screenCtx, screenTex, lapCanvas, lapCtx, lapTex;
+let big, bigCtx, bigImage, pixels, sil, silCtx, rimA, rimB, key, SCREEN_MAT, PHONE_MATS = [], LAP_CAM = [], ALU_MATS = [];
+let LIGHT_PHONE_SCALE, DARK_PHONE_SCALE;
+const LID = new Set(['SCREEN', 'GLASS', 'BEZEL', 'LID_BACK', 'LID_GASKET', 'CAMERA_GLASS', 'CAMERA_HOUSING', 'CAMERA_LENS', 'CAMERA_RING', 'BASE_TyOrApjEOLhYCaF', 'BASE_xVreGKoBGSZYMij']);
+const ALUMINIUM = new Set(['pEUnNAGXCoAFoUk', 'zFJMMvikHFjtmzd', 'hZBlDyddxAQhuPm', 'AvocVUvikCzzMtu', 'JKvAHnqjqlqshmY']);
+const HINGE_AT = new THREE.Vector3(0, -0.0023, -0.1147), BASE_TILT = D2R * 20.07;
+function glassMaterial(intensity) {
+  return new THREE.MeshStandardMaterial({ color: 0x000000, metalness: 0, roughness: 0.03, envMapIntensity: intensity,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 });
+}
+function planarScreenUv(mesh) {
+  mesh.geometry = mesh.geometry.clone(); mesh.geometry.computeBoundingBox();
+  const bb = mesh.geometry.boundingBox, pos = mesh.geometry.getAttribute('position'), uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) { uv[i * 2] = (pos.getX(i) - bb.min.x) / (bb.max.x - bb.min.x); uv[i * 2 + 1] = (pos.getY(i) - bb.min.y) / (bb.max.y - bb.min.y); }
+  mesh.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+function fitScreenUv(mesh) {
+  const uv = mesh.geometry.getAttribute('uv'); let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+  for (let i = 0; i < uv.count; i++) { u0 = Math.min(u0, uv.getX(i)); u1 = Math.max(u1, uv.getX(i)); v0 = Math.min(v0, uv.getY(i)); v1 = Math.max(v1, uv.getY(i)); }
+  if (u0 === 0 && v0 === 0 && u1 === 1 && v1 === 1) return;
+  mesh.geometry = mesh.geometry.clone(); const o = mesh.geometry.getAttribute('uv');
+  for (let i = 0; i < o.count; i++) o.setXY(i, (uv.getX(i) - u0) / (u1 - u0), (uv.getY(i) - v0) / (v1 - v0));
+  o.needsUpdate = true;
+}
+function studio() {
+  const s = new THREE.Scene(); s.background = new THREE.Color().setScalar(0.5);
+  const cardL = (pos, w, h, radiance) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(radiance), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(0, 0, 0); s.add(m);
+  };
+  cardL([-4, 5, 3], 3.5, 2.5, 3.0); cardL([4.5, 1.5, 2.5], 0.5, 7, 12); cardL([-4.6, 0.5, -1.5], 0.5, 6, 8);
+  cardL([0, 3.2, 6], 6, 0.6, 7); cardL([0, -3, 4], 8, 3, 1.2); cardL([0, 6, 0], 6, 6, 2.0); cardL([0, 0.5, 8], 9, 1.2, 4);
+  return s;
+}
+function darkStudio() { // near-black, lit only by volt strips above and behind, and one faint white card at the side
+  const s = new THREE.Scene(); s.background = new THREE.Color().setScalar(0.004);
+  const strip = (pos, w, h, col, k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(0, 0, 0); s.add(m);
+  };
+  strip([0, 4.5, -1.2], 6, 0.6, WHI.volt, 16); strip([-4, 1.6, -2.5], 0.18, 5, WHI.volt, 2.2); strip([4.2, 0.8, -1.2], 0.2, 4, WHI.volt, 1.6);
+  strip([3.5, 2.5, 3], 1.6, 1.2, '#FFFFFF', 0.9);
+  return s;
+}
+// T3-only lighting rigs. Broad, full-height rear strips cover the grazing rail
+// normals; the old narrow front cards missed those normals on both long sides.
+const TALL_LIGHTS = {
+  A: { left:WHI.volt, right:'#F0F0ED', frame:'#B7B1A6', roughness:0.36, environment:1.0, radiance:1.4, ground:'#020203', screen:0.96 },
+  B: { left:'#F0F1F4', right:'#F1EEE8', frame:'#C7C2B9', roughness:0.40, environment:1.0, radiance:1.2, ground:'#101114', screen:0.96 },
+  C: { left:'#E4EDFF', right:(PRODUCT.rimTint || WHI.volt), frame:'#B8BCC4', roughness:0.56, environment:1.0, radiance:1.5, ground:'#08090C', screen:0.96 },
+};
+// r9 variants keep C's device, neutral sources and post-processing. Only the
+// existing coloured strip's radiance changes; C3 substitutes a neutral strip.
+TALL_LIGHTS.C1 = { ...TALL_LIGHTS.C, voltScale: 0.5 };
+TALL_LIGHTS.C2 = { ...TALL_LIGHTS.C, voltScale: 0.25 };
+TALL_LIGHTS.C3 = { ...TALL_LIGHTS.C, voltScale: 0, right: TALL_LIGHTS.C.left };
+function tallStripStudio(option) {
+  const s = new THREE.Scene(); s.background = new THREE.Color().setScalar(0.003);
+  const strip = (pos,w,h,col,k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(col).multiplyScalar(k),side:THREE.DoubleSide}));
+    m.position.set(...pos); m.lookAt(0,0,0); s.add(m);
+  };
+  strip([-4,0,-2],3.2,14,option.left,option.radiance);
+  strip([4,0,-2],3.2,14,option.right,option.radiance * (option.voltScale === 0 ? 1 : (option.voltScale ?? 1)));
+  strip([0,4,-1.5],8,2.4,'#F2F2EE',option.radiance);
+  strip([-3,0,3],1.2,10,option.left,option.radiance*0.45);
+  strip([3,0,3],1.2,10,option.right,option.radiance*0.45 * (option.voltScale === 0 ? 1 : (option.voltScale ?? 1)));
+  strip([0,-4,-2],7,1,'#D8DCE2',option.radiance*0.5);
+  return s;
+}
+const ENV = {};
+const tallPhones = [];
+function makeTallPhone(source) {
+  const surface = document.createElement('canvas'); surface.width = 1400; surface.height = 2948;
+  const ctx = surface.getContext('2d', { willReadFrequently: true });
+  const tex = new THREE.CanvasTexture(surface); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 16;
+  const model = source.clone(true);
+  model.traverse(m => { if (m.isMesh) m.material = m.material.clone(); });
+  const parts = buildPhone(model, { screenMap: tex, screenLevel: 0.96 });
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model, true), centre = box.getCenter(new THREE.Vector3());
+  model.position.sub(centre);
+  const unit = new THREE.Group(); unit.add(model); unit.scale.setScalar(1 / box.getSize(new THREE.Vector3()).y);
+  const root = new THREE.Group(); root.add(unit); scene.add(root); root.visible = false;
+  model.traverse(m => { if (m.name === 'GLASS') m.visible = false; }); // keep the real screen clear
+  model.traverse(m => {
+    if (m.isMesh && m.material.name === 'black.002') m.material = new THREE.MeshBasicMaterial({ color: '#030304' });
+    // GLTFLoader sanitises dots in mesh names. Omit the island's reflective overlay and front lens,
+    // whose coplanar highlights otherwise show a grey camera spot and a moiré edge at this still scale.
+    const name = m.name.replaceAll('.', '');
+    if (['Cube016_glass002_0', 'Sphere013_lensinglass_0', 'Circle013_black002_0'].includes(name)) m.visible = false;
+  });
+  return { root, unit, ctx, tex, parts };
+}
+async function prepare3d() {
+  const BW = W * SS, BH = H * SS;
+  const glc = document.createElement('canvas'); glc.width = BW; glc.height = BH;
+  renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1); renderer.setSize(BW, BH, false); renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  scene = new THREE.Scene(); const pm = new THREE.PMREMGenerator(renderer);
+  ENV.light = pm.fromScene(studio(), 0.02).texture; ENV.dark = pm.fromScene(darkStudio(), 0.03).texture; scene.environment = ENV.light;
+  for (const [id,option] of Object.entries(TALL_LIGHTS)) ENV['tall'+id] = pm.fromScene(tallStripStudio(option),0.015).texture;
+  key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(-2, 3, 2.5); scene.add(key);
+  rimA = new THREE.DirectionalLight(WHI.volt, 0); rimA.position.set(-3, 1.2, -2.2); scene.add(rimA);   // the dark look's rims
+  rimB = new THREE.DirectionalLight(0xffffff, 0); rimB.position.set(3, 2.4, -1.6); scene.add(rimB);
+  big = document.createElement('canvas'); big.width = BW; big.height = BH; bigCtx = big.getContext('2d', { willReadFrequently: true });
+  bigImage = bigCtx.createImageData(BW, BH); pixels = new Uint8Array(BW * BH * 4);
+  sil = document.createElement('canvas'); sil.width = W; sil.height = H; silCtx = sil.getContext('2d', { willReadFrequently: true });
+  // the phone
+  screenCanvas = document.createElement('canvas'); screenCanvas.width = 1400; screenCanvas.height = 2948;
+  screenCtx = screenCanvas.getContext('2d', { willReadFrequently: true });
+  screenTex = new THREE.CanvasTexture(screenCanvas); screenTex.colorSpace = THREE.SRGBColorSpace; screenTex.anisotropy = 16;
+  const ip = (await new GLTFLoader().loadAsync('assets/devices/iphone-16-pro-max.glb')).scene;
+  tallPhones.push(makeTallPhone(ip), makeTallPhone(ip));
+  ip.traverse((m) => {
+    if (!m.isMesh) return; m.frustumCulled = false;
+    if (m.name === 'SCREEN') { planarScreenUv(m); m.material = SCREEN_MAT = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false, color: new THREE.Color().setScalar(0.96), side: THREE.DoubleSide }); }
+    else if (m.name === 'GLASS') { m.material = glassMaterial(0.22); m.renderOrder = 10; }
+    else if (m.material?.isMeshStandardMaterial) { m.material.envMapIntensity = 1.1; PHONE_MATS.push(m.material); }
+  });
+  ip.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(ip), c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  ip.position.sub(c); phoneUnit = new THREE.Group(); phoneUnit.scale.setScalar(1 / size.y); phoneUnit.add(ip);
+  phone = new THREE.Group(); phone.add(phoneUnit); scene.add(phone);
+  // Measure once with an identity parent. A later pose must not change the next still's physical scale.
+  const freshHeight = new THREE.Box3().setFromObject(phoneUnit).getSize(new THREE.Vector3()).y;
+  LIGHT_PHONE_SCALE = 0.48 * phoneUnit.scale.x / freshHeight; DARK_PHONE_SCALE = phoneUnit.scale.x / freshHeight;
+  // the laptop
+  if (FAMILY === 'light') {
+  const air = (await new GLTFLoader().loadAsync('assets/devices/macbook-air-15.glb')).scene;
+  lapCanvas = document.createElement('canvas'); lapCanvas.width = 2880; lapCanvas.height = 1800; lapCtx = lapCanvas.getContext('2d', { willReadFrequently: true });
+  lapTex = new THREE.CanvasTexture(lapCanvas); lapTex.colorSpace = THREE.SRGBColorSpace; lapTex.anisotropy = 16;
+  laptop = new THREE.Group(); hinge = new THREE.Group(); lid = new THREE.Group();
+  const baseOff = new THREE.Group(), lidOff = new THREE.Group();
+  baseOff.position.copy(HINGE_AT).negate(); lidOff.position.copy(HINGE_AT).negate();
+  laptop.add(hinge); hinge.add(baseOff); hinge.add(lid); lid.add(lidOff);
+  const lm = []; air.traverse((m) => { if (m.isMesh) lm.push(m); });
+  for (const m of lm) {
+    m.frustumCulled = false; if (m.name === 'CAMERA_GLASS') m.renderOrder = 1; m.updateWorldMatrix(true, false); const mw = m.matrixWorld.clone(); // a fixed draw order at the camera (its materials load in any order)
+    if (m.name === 'SCREEN') { LAP_SCREEN = m; fitScreenUv(m); m.material = new THREE.MeshBasicMaterial({ map: lapTex, toneMapped: false, color: new THREE.Color().setScalar(0.96) }); }
+    else if (m.name === 'GLASS') { m.material = glassMaterial(0.8); m.renderOrder = 10; LGLASS = m; }
+    else if (m.material?.isMeshStandardMaterial) {
+      m.material.envMapIntensity = 1.0;
+      if (ALUMINIUM.has(m.material.name)) { m.material.color.set('#D9DADC'); m.material.metalness = 0.85; m.material.roughness = 0.3; m.material.roughnessMap = null; ALU_MATS.push(m.material); }
+    }
+    if (m.name.startsWith('CAMERA_')) LAP_CAM.push(m);
+    if (m.name === 'BEZEL') LBEZEL = m;
+    (LID.has(m.name) ? lidOff : baseOff).add(m); m.matrix.copy(mw); m.matrix.decompose(m.position, m.quaternion, m.scale);
+  }
+  const lb = new THREE.Box3().setFromObject(laptop, true); laptop.scale.setScalar(1 / lb.getSize(new THREE.Vector3()).x);
+  scene.add(laptop);
+  } else laptop = new THREE.Group();
+  camera = new THREE.PerspectiveCamera(16, W / H, 0.01, 100);
+}
+// render, read back at twice the size, flip, and scale down into the still (pixels, never the WebGL canvas itself)
+function render3d() {
+  renderer.render(scene, camera);
+  const BW = W * SS, BH = H * SS, gl = renderer.getContext(); gl.readPixels(0, 0, BW, BH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  const row = BW * 4, d = bigImage.data; for (let y = 0; y < BH; y++) d.set(pixels.subarray((BH - 1 - y) * row, (BH - y) * row), y * row);
+  bigCtx.putImageData(bigImage, 0, 0);
+  silCtx.reset(); silCtx.imageSmoothingQuality = 'high'; silCtx.drawImage(big, 0, 0, W, H);
+}
+function paintPhone(img, bar, barInk, px = screenCtx, tex = screenTex) { // the capture under a drawn status bar (the product's own colours)
+  const PB = 40, BAR = 177;
+  px.reset(); px.fillStyle = '#050506'; px.fillRect(0, 0, 1400, 2948);
+  px.save(); px.beginPath(); px.roundRect(PB, PB, 1320, 2868, 150); px.clip();
+  px.fillStyle = bar; px.fillRect(PB, PB, 1320, 2868); px.drawImage(img, PB, PB + BAR);
+  px.fillStyle = barInk; px.font = `600 51px "${PRODUCT.ui}"`; px.textAlign = 'center'; px.fillText('9:41', PB + 246, PB + 111); px.textAlign = 'left';
+  const bx = PB + 1098, by = PB + 75;
+  px.lineWidth = 3.5; px.strokeStyle = barInk; px.globalAlpha = 0.45; px.beginPath(); px.roundRect(bx, by, 78, 37.5, 12); px.stroke();
+  px.globalAlpha = 1; px.beginPath(); px.roundRect(bx + 6, by + 6, 57, 25.5, 7.5); px.fill();
+  px.globalAlpha = 0.45; px.beginPath(); px.roundRect(bx + 81, by + 12, 4.8, 13.5, 3); px.fill(); px.globalAlpha = 1;
+  [0, 1, 2, 3].forEach((i) => { px.beginPath(); px.roundRect(PB + 3 * (318 + i * 6), PB + 3 * (31 - i * 2.4), 12, 3 * (3 + i * 2.4), 3); px.fill(); });
+  px.restore(); tex.needsUpdate = true;
+}
+function finish(dark) { // neutral satin metal in light; dark metal in the dark family
+  for (const m of PHONE_MATS) {
+    if (m.name === 'metalframe.002') { m.color.set(dark ? '#4A4A4D' : '#B7B1A6'); m.metalness = 0.9; m.roughness = dark ? 0.28 : 0.22; }
+    else if (m.name === 'basecolor.001') { m.color.set(dark ? '#2B2B2E' : '#C6C0B5'); m.metalness = 0.3; m.roughness = 0.35; }
+  }
+}
+// aim the camera at a world box, filling `fill` of the frame's limiting side, the box's centre at (cx, cy) of the frame
+function frameBox(box, fill, cx = 0.5, cy = 0.5, elev = 4) {
+  const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  const vf = camera.fov * D2R, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  const d = Math.max((s.x / 2) / Math.tan(hf / 2) / fill, (s.y / 2) / Math.tan(vf / 2) / fill) + s.z / 2;
+  const dir = new THREE.Vector3(0, Math.sin(elev * D2R), Math.cos(elev * D2R));
+  camera.position.copy(c).addScaledVector(dir, d); camera.lookAt(c); camera.updateMatrixWorld();
+  // shift so the box's centre lands at (cx, cy): a lens shift keeps the view straight
+  camera.setViewOffset(W, H, (0.5 - cx) * W, (0.5 - cy) * H, W, H); camera.updateProjectionMatrix();
+}
+
+// ============================== the looks ==============================
+// LIGHT: frontal devices on the product's pale studio ground. An orthographic camera (no perspective), straight at the screen: the lid upright and
+// square to the view, so the base shows only its front edge; the phone straight on, standing on the same surface as the
+// laptop's base, overlapping its right side. Contact shadows only, where each base meets the surface.
+function ortho(box, fillW, fillH, cx, cy) { // an orthographic view of a world box, its centre at (cx, cy) of the frame
+  const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  const scale = Math.max(s.x / (fillW * W), s.y / (fillH * H)); // world units per pixel
+  const o = new THREE.OrthographicCamera(-W / 2 * scale, W / 2 * scale, H / 2 * scale, -H / 2 * scale, 0.01, 100);
+  o.position.set(c.x + (0.5 - cx) * W * scale, c.y - (0.5 - cy) * H * scale, c.z + 10); o.lookAt(o.position.x, o.position.y, c.z); o.updateMatrixWorld();
+  return o;
+}
+// a little perspective, straight on: the camera level at the deck's height, so the keyboard is edge-on and unseen, and a
+// lens shift (not a tilt) lifts the frame onto the group, so the screen's verticals stay straight
+function levelCam(box, eyeY, fillW, fillH, cx, cy, fov = 12) {
+  const cam = new THREE.PerspectiveCamera(fov, W / H, 0.01, 100), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  const tanV = Math.tan(fov * D2R / 2), tanH = tanV * W / H;
+  const d = Math.max((s.x / 2) / (tanH * fillW), (s.y / 2) / (tanV * fillH)) + s.z / 2;
+  cam.position.set(c.x, eyeY, c.z + d); cam.lookAt(c.x, eyeY, c.z);
+  const at = 0.5 - ((c.y - eyeY) / (d * tanV)) / 2; // where the group's centre would sit, unshifted
+  cam.setViewOffset(W, H, (0.5 - cx) * -W * 0, (at - cy) * H, W, H); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  return cam;
+}
+const toPx = (v, cam) => { const p = v.clone().project(cam); return [(p.x * 0.5 + 0.5) * W, (0.5 - p.y * 0.5) * H]; };
+function projectedBox(box, cam) {
+  const points = [];
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) points.push(toPx(new THREE.Vector3(x,y,z),cam));
+  return bounds(points);
+}
+function bounds(points) {
+  const xs = points.map(p=>p[0]), ys = points.map(p=>p[1]);
+  return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];
+}
+function protectedScreenRect(rect, cam) {
+  // Map capture pixels through the actual screen's UVs, then the device/camera matrices.
+  const uv = LAP_SCREEN.geometry.getAttribute('uv'), pos = LAP_SCREEN.geometry.getAttribute('position');
+  // The screen has rounded corners: derive its affine UV plane from three non-collinear vertices,
+  // rather than assuming that its mesh contains the four bounding rectangle's corner vertices.
+  let second=0, third=0, longest=0, largest=0;
+  const u0=uv.getX(0),v0=uv.getY(0);
+  for(let i=1;i<uv.count;i++){const d=(uv.getX(i)-u0)**2+(uv.getY(i)-v0)**2;if(d>longest){second=i;longest=d;}}
+  const u1=uv.getX(second)-u0,v1=uv.getY(second)-v0;
+  for(let i=1;i<uv.count;i++){const d=Math.abs(u1*(uv.getY(i)-v0)-v1*(uv.getX(i)-u0));if(d>largest){third=i;largest=d;}}
+  if(largest<1e-8)throw Error('Laptop screen has degenerate UVs');
+  const u2=uv.getX(third)-u0,v2=uv.getY(third)-v0,det=u1*v2-v1*u2;
+  const p0=new THREE.Vector3().fromBufferAttribute(pos,0),p1=new THREE.Vector3().fromBufferAttribute(pos,second).sub(p0),p2=new THREE.Vector3().fromBufferAttribute(pos,third).sub(p0);
+  const du=p1.clone().multiplyScalar(v2).addScaledVector(p2,-v1).divideScalar(det);
+  const dv=p2.clone().multiplyScalar(u1).addScaledVector(p1,-u2).divideScalar(det);
+  const origin=p0.clone().addScaledVector(du,-u0).addScaledVector(dv,-v0);
+  const [x,y,w,h] = rect;
+  return bounds([[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([px,py])=>toPx(origin.clone().addScaledVector(du,px/2880).addScaledVector(dv,1-py/1800).applyMatrix4(LAP_SCREEN.matrixWorld),cam)));
+}
+function placeWidePhone(lb, deck, words) {
+  const regions = VALUES.desktopProtection ?? PRODUCT.desktopProtection ?? [];
+  if (!Array.isArray(regions)) throw Error('desktopProtection must be an array of named capture-pixel rectangles');
+  for(const r of regions) {
+    const a=r?.rect;
+    if(!r.name || !Array.isArray(a) || a.length!==4 || !a.every(Number.isFinite) || a[0]<0 || a[1]<0 || a[2]<=0 || a[3]<=0 || a[0]+a[2]>2880 || a[1]+a[3]>1800) throw Error('Invalid desktopProtection region: '+JSON.stringify(r));
+  }
+  const side = VALUES.phoneSide ?? PRODUCT.phoneSide ?? 'auto';
+  if(!['auto','left','right'].includes(side)) throw Error('phoneSide must be auto, left or right');
+  const sides = side==='auto' ? ['right','left'] : [side];
+  for(const edge of sides) for(let step=0;step<=(regions.length ? 16 : 0);step++) {
+    phone.position.x = edge==='right' ? lb.max.x-0.06+step*0.015 : lb.min.x+0.06-step*0.015;
+    phone.updateMatrixWorld(true);
+    const pb = new THREE.Box3().setFromObject(phone,true), all = lb.clone().union(pb);
+    const cam = words ? levelCam(all,deck,0.9,0.55,0.5,0.622) : levelCam(all,deck,0.86,0.82,0.5,0.5);
+    const p = projectedBox(pb,cam), padding = 4;
+    const checked = regions.map(r=>{
+      const q=protectedScreenRect(r.rect,cam);
+      const occluded=Math.min(p[2]+padding,q[2])-Math.max(p[0]-padding,q[0])>0 && Math.min(p[3]+padding,q[3])-Math.max(p[1]-padding,q[1])>0;
+      return {...r,projected:q,occluded};
+    });
+    if(checked.every(r=>!r.occluded)) {
+      PLACEMENT_AUDIT={side:edge,offset:step*0.015,phone:p,regions:checked};
+      camera=cam; return pb;
+    }
+  }
+  throw Error('No whole-device placement protects the named desktop regions; choose a different native capture or omit the wide look.');
+}
+function contact(box, cam, alpha) { // a soft shadow along a device's foot, where it meets the surface
+  const [x0, y] = toPx(new THREE.Vector3(box.min.x, box.min.y, box.max.z), cam), [x1] = toPx(new THREE.Vector3(box.max.x, box.min.y, box.max.z), cam);
+  const w = x1 - x0;
+  g.save(); g.fillStyle = OST.ink;
+  g.filter = `blur(${Math.round(H * 0.012)}px)`; g.globalAlpha = alpha; g.beginPath(); g.ellipse(x0 + w / 2, y - 2, w * 0.5, H * 0.012, 0, 0, Math.PI * 2); g.fill();
+  g.filter = `blur(${Math.round(H * 0.003)}px)`; g.globalAlpha = alpha * 1.2; g.beginPath(); g.ellipse(x0 + w / 2, y - 1, w * 0.47, H * 0.0035, 0, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+function lightGroup() {
+  scene.environment = ENV.light; finish(false); rimA.intensity = 0; rimB.intensity = 0; key.intensity = 0.9; SCREEN_MAT.color.setScalar(0.96); for (const m of PHONE_MATS) m.envMapIntensity = 1.1;
+  lapCtx.reset(); lapCtx.drawImage(IMG.lap, 0, 0); lapTex.needsUpdate = true;
+  paintPhone(IMG.ostPhone, OST.ground, OST.ink);
+  hinge.rotation.set(-BASE_TILT, 0, 0); lid.rotation.set(D2R * 20.07, 0, 0); // the base level, the lid upright
+  LGLASS.visible = false;                            // no cover glass: its reflection greys the black bezel, and its camera hole shows as a dot
+  for (const m of LAP_CAM) m.visible = false;        // the notch reads as one black shape, no camera dot
+  for (const m of ALU_MATS) { m.color.set('#B9BCC0'); m.roughness = 0.46; m.envMapIntensity = 0.45; } // satin, so the key light shades the base and its thumb notch
+  if (LBEZEL) { const b = LBEZEL.material = LBEZEL.material.clone(); b.color.set('#060607'); b.metalness = 0; b.roughness = 0.55; b.envMapIntensity = 0.12; } // a true black bezel, as the hardware's
+  key.position.set(-0.6, 4, 2.2); key.intensity = 1.25; // from above and in front: the base's top edge lit, its thumb notch in shade
+  laptop.rotation.set(0, 0, 0); laptop.position.set(0, 0, 0); laptop.updateMatrixWorld(true);
+  const lb = new THREE.Box3().setFromObject(laptop, true), PH = 0.48; // the phone at its real size beside a 15-inch laptop
+  phoneUnit.scale.setScalar(LIGHT_PHONE_SCALE);
+  // the phone overlapping the laptop's right edge, part of it past the laptop, standing on the same surface
+  phone.rotation.set(0, 0, 0); phone.position.set(lb.max.x - 0.06, lb.min.y + PH / 2, lb.max.z + 0.07); phone.updateMatrixWorld(true);
+  const words = DIR === 'L2';
+  const deck = new THREE.Box3().setFromObject(hinge.children[0], true).max.y; // the base's top: the keyboard deck
+  // L2: the short product line and sentence sit close to the unchanged device block.
+  const pb = placeWidePhone(lb, deck, words);
+  render3d();
+  g.fillStyle = OST.ground; g.fillRect(0, 0, W, H);
+  if (VALUES.contactShadow !== false && VALUES.laptopContact !== false)
+    drawLaptopContact(g,hinge.children[0],camera,W,H,DIR);
+  contact(lb, camera, 0.22); contact(pb, camera, 0.26);
+  if (VALUES.contactShadow !== false) drawContact(g,[laptop,phone],camera,W,H,DIR);
+  g.drawImage(sil, 0, 0);
+  if (words) heroLight();
+}
+function recordText(text, role) {
+  const size = Number(g.font.match(/([\d.]+)px/)[1]), m = g.measureText(text);
+  TEXT_AUDIT.push({role,text,font:g.font,fontPx:size,at360:size*360/W,inkHeightAt360:(m.actualBoundingBoxAscent+m.actualBoundingBoxDescent)*360/W});
+}
+function fitText(text, x, y, maxWidth, minSize = 0, role = 'headline') {
+  if (!text) return;
+  const font = g.font, size = Number(font.match(/([\d.]+)px/)[1]);
+  const width = g.measureText(text).width;
+  if (width > maxWidth) g.font = font.replace(/([\d.]+)px/, `${size * maxWidth / width}px`);
+  const actual = Number(g.font.match(/([\d.]+)px/)[1]);
+  if(actual < minSize) throw Error(`${role} would be ${(actual*360/W).toFixed(2)} px at 360; shorten the words (minimum ${minSize*360/W} px).`);
+  recordText(text,role);
+  g.fillText(text, x, y); g.font = font;
+}
+function heroLight() {
+  if ((VALUES.heroHierarchy ?? 'no-actions') !== 'no-actions')
+    throw Error('L2 uses no-actions; shorten the product line and sentence instead of adding pictured controls.');
+  g.save(); g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle=OST.ink;
+  g.font=`400 84px "${PRODUCT.display}"`; g.letterSpacing='-0.8px';
+  fitText(OST.line,W/2,194,W*0.88,64,'headline');
+  g.font=`400 64px "${PRODUCT.ui}"`; g.letterSpacing='0px'; g.fillStyle=PRODUCT.muted;
+  fitText(VALUES.description,W/2,278,W*0.88,64,'description');
+  g.restore();
+}
+
+let grainC = null;
+// ============================== tall directions ==============================
+// These are portrait compositions, with no laptop, floating icon, page buttons or store badge.
+// T2: earlier input behind-left, visibly different result in front-right (package round 2).
+function tallFinish(dark) {
+  scene.environment = dark ? ENV.dark : ENV.light;
+  key.position.set(-0.6, 4, 2.2); key.intensity = dark ? 0.035 : 1.0;
+  rimA.intensity = dark ? 0.32 : 0; rimB.intensity = dark ? 0.12 : 0;
+  for (const p of tallPhones) {
+    p.root.visible = false;
+    p.parts.screen.material.color.setScalar(dark ? 0.66 : 0.96);
+    for (const m of p.parts.finish) {
+      m.envMapIntensity = dark ? 0.58 : 0.85;
+      if (m.name === 'metalframe.002') { m.color.set(dark ? '#353538' : '#B7B1A6'); m.metalness = 0.9; m.roughness = dark ? 0.35 : 0.3; }
+      else if (m.name === 'basecolor.001') m.color.set(dark ? '#222225' : '#C6C0B5');
+    }
+  }
+}
+function tallPose(p, img, { x = 0, y = 0, z = 0, scale = 1, yaw = -5, pitch = 2, roll = 0, dark = false } = {}) {
+  paintPhone(img, dark ? WHI.ground : OST.ground, dark ? WHI.chalk : OST.ink, p.ctx, p.tex);
+  p.root.visible = true; p.root.position.set(x, y, z); p.root.scale.setScalar(scale);
+  p.root.rotation.set(pitch * D2R, yaw * D2R, roll * D2R, 'YXZ'); p.root.updateMatrixWorld(true);
+  return new THREE.Box3().setFromObject(p.root, true);
+}
+function tallShadow(box, strength = 0.15) {
+  // Only the underside casts a small diffuse shadow: no rectangular card or screen-sized halo.
+  contact(box, camera, strength);
+}
+function tallLight() {
+  tallFinish(false);
+  const words = DIR === 'T1-line', pair = DIR === 'T2';
+  let rear, front;
+  if (pair) {
+    rear = tallPose(tallPhones[0], IMG.ostRequest, { x: -0.14, y: 0.04, yaw: 3, pitch: 1 });
+    front = tallPose(tallPhones[1], IMG.ostResult, { x: 0.185, y: -0.08, z: 0.09, scale: 0.85, yaw: -4, pitch: 1 });
+  } else rear = tallPose(tallPhones[0], IMG.ostPhone, { yaw: -6, pitch: 2 });
+  camera = new THREE.PerspectiveCamera(14, W / H, 0.01, 100);
+  frameBox(front ? rear.clone().union(front) : rear, pair ? 0.91 : words ? 0.70 : 0.82, 0.5, pair ? 0.49 : words ? 0.58 : 0.49, 0);
+  render3d(); g.fillStyle = OST.ground; g.fillRect(0, 0, W, H);
+  tallShadow(rear, 0.14); if (front) tallShadow(front, 0.17);
+  if (VALUES.contactShadow !== false) drawContact(g,front ? tallPhones.map(p=>p.root) : [tallPhones[0].root],camera,W,H,DIR);
+  g.drawImage(sil, 0, 0);
+  if (words) {
+    g.save(); g.font = `400 76px "${PRODUCT.display}"`; g.letterSpacing = '-0.8px';
+    g.textAlign = 'center'; g.fillStyle = OST.ink; fitText(OST.line, W / 2, H * 0.135 + g.measureText('H').actualBoundingBoxAscent / 2, W * 0.88); g.restore();
+  }
+}
+// ============================== the template ==============================
+let ready = false;
+async function prepare(values = {}) {
+  // Product accent replaces every coloured light; null/empty selects neutral.
+  // With no override, retain the approved example's original accent tint.
+  if (!ready && Object.hasOwn(values, 'accent')) {
+    WHI.volt = values.accent || '#F0F1F4';
+    TALL_LIGHTS.A.left = WHI.volt;
+    for (const id of ['C', 'C1', 'C2']) TALL_LIGHTS[id].right = WHI.volt;
+  }
+  const [w, h] = SIZES[values.size] || SIZES['16:9'];
+  if (ready && (w !== W || h !== H)) {
+    W = w; H = h; TALL = H > W; canvas.width = W; canvas.height = H;
+    renderer.setSize(W * SS, H * SS, false); big.width = W * SS; big.height = H * SS;
+    bigImage = bigCtx.createImageData(W * SS, H * SS); pixels = new Uint8Array(W * H * SS * SS * 4);
+    sil.width = W; sil.height = H; grainC = null;
+  }
+  if (!ready) {
+    W = w; H = h; TALL = H > W; canvas.width = W; canvas.height = H;
+    for (const font of PRODUCT.fonts) await loadFont(font.family, font.file, { weight: font.weight });
+    await document.fonts.ready;
+    for (const [key, file] of Object.entries(PRODUCT.screens)) IMG[key] = await loadImage(file);
+    for (const [key, im] of Object.entries(IMG)) {
+      const expected = key === 'lap' ? [2880,1800] : [1320,2691];
+      if (im.width !== expected[0] || im.height !== expected[1]) throw new Error(`${key}: capture must be ${expected.join(' × ')}; recapture the real app at the planned viewport, never stretch it.`);
+    }
+    for (const im of Object.values(IMG)) g.drawImage(im, 0, 0, 8, 8);
+    await prepare3d(); g.reset(); ready = true;
+  }
+}
+function seek(t, values = {}) {
+  g.reset();
+  TEXT_AUDIT=[]; PLACEMENT_AUDIT=null;
+  VALUES = { ...PRODUCT.text, ...values };
+  DIR = values.dir || (TALL ? (FAMILY === 'light' ? 'T1-line' : 'T3') : (FAMILY === 'light' ? 'L1' : 'D1'));
+  const allowed = FAMILY === 'light' ? (TALL ? ['T1-line','T2'] : ['L1','L2']) : (TALL ? ['T3','T3-hand'] : ['D1','D2']);
+  if (!allowed.includes(DIR)) throw new Error(`Look ${DIR} does not belong to ${FAMILY}/${W}×${H}`);
+  OST.line = VALUES.headline; WHI.line = [VALUES.headline, VALUES.headline2];
+  laptop.visible = DIR[0] === 'L'; phone.visible = DIR[0] !== 'T';
+  for (const p of tallPhones) p.root.visible = false;
+  if (DIR[0] === 'T') tallLight(); else lightGroup();
+  return canvas;
+}
+window.template = { fps: 1, duration: 1, sizes: SIZES, width: 1920, height: 1080, defaults: () => ({ size: '16:9', ...PRODUCT.text }), get fields() {
+  return DIR==='L2'
+    ? [{id:'headline',type:'text',maxLength:26},{id:'description',type:'text',maxLength:26}]
+    : [{id:'headline',type:'text',maxLength:40}];
+}, prepare, seek, keyTimes: [0], evidence: () => sil.toDataURL(), audit: () => ({text:TEXT_AUDIT,desktop:PLACEMENT_AUDIT,pair:DIR==='T2'?{rear:'ostRequest',front:'ostResult'}:null}) };
+const q = new URLSearchParams(location.search);
+if (window.parent === window && !q.has('render')) {
+  const values = Object.fromEntries(q); if (!values.size && values.dir?.startsWith('T')) values.size = '9:16';
+  prepare(values).then(() => seek(0, values));
+}
+</script>

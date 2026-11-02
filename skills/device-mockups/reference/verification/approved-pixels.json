@@ -1,0 +1,38 @@
+[
+  {
+    "look": "L1",
+    "matchesApprovedPixels": true,
+    "dimensions": [
+      1920,
+      1080
+    ],
+    "pixelSha256": "e26fb4664fbeabb3b7c6a3a8088f46a4912621583ff0bd800d9a8d18dcb71728"
+  },
+  {
+    "look": "L2",
+    "matchesApprovedPixels": true,
+    "dimensions": [
+      1920,
+      1080
+    ],
+    "pixelSha256": "5936bd17cc8ab61817142b0c578493011fae20a102a3d14b9682702437b03582"
+  },
+  {
+    "look": "T1-line",
+    "matchesApprovedPixels": true,
+    "dimensions": [
+      1080,
+      1920
+    ],
+    "pixelSha256": "a0841b13c6d5486cc41ba5aa2038bd9e2add2334586a6b0386833a23c1dfdb5d"
+  },
+  {
+    "look": "T2",
+    "matchesApprovedPixels": true,
+    "dimensions": [
+      1080,
+      1920
+    ],
+    "pixelSha256": "35e0e174aad74d63df946e1ac3cdc613a5063782b44ecdf952eaa7be282ca908"
+  }
+]

@@ -1,0 +1,55 @@
+{
+  "looks": {
+    "L1": {
+      "hash": "4fe9ebbed6a99ee8af0aa36eaa75b3e5f11e5dc93514bb0161b8e027ef356ccb",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    "L2": {
+      "hash": "66f5d708feb058617d31b21d6c98354cf5aab1b63c16ac84b38897fdc1320584",
+      "dimensions": [
+        1920,
+        1080
+      ]
+    },
+    "T1-line": {
+      "hash": "f68f1299fe28abdd5a1cb3afc8c8c5290f52dbaa819e14cc1f006726172f503b",
+      "dimensions": [
+        1080,
+        1920
+      ]
+    },
+    "T2": {
+      "hash": "49f59677c61cc2580c4083a2fc6f268ec98e7eb5e1dbe8c2892c497fc25983bc",
+      "dimensions": [
+        1080,
+        1920
+      ]
+    }
+  },
+  "resources": [
+    "/assets/devices/iphone-16-pro-max.glb",
+    "/assets/devices/macbook-air-15.glb",
+    "/assets/fonts/figtree-variable.ttf",
+    "/assets/fonts/newsreader-variable.ttf",
+    "/assets/screens/laptop-stay-found@2.webp",
+    "/assets/screens/phone-request-ready@3.webp",
+    "/assets/screens/phone-stay-detail@3.webp",
+    "/assets/screens/phone-stays-found@3.webp",
+    "/contact-shadow.js",
+    "/devices.js",
+    "/favicon.ico",
+    "/index.html?render=1",
+    "/kit.js",
+    "/product.js",
+    "/vendor/addons/loaders/GLTFLoader.js",
+    "/vendor/addons/utils/BufferGeometryUtils.js",
+    "/vendor/addons/utils/SkeletonUtils.js",
+    "/vendor/three.core.min.js",
+    "/vendor/three.module.min.js"
+  ],
+  "hand": null,
+  "failures": []
+}

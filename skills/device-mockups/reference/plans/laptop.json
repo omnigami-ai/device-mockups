@@ -1,0 +1,33 @@
+{
+  "url": "http://localhost:4403/app/#/chat/lake-cabin",
+  "viewport": [
+    1440,
+    900
+  ],
+  "ready": "main.chat[data-step='results'] .acts",
+  "init": "(async () => { await document.fonts.ready; await Promise.all([...document.images].map(image => image.decode())); document.querySelector('[data-thread]').scrollTop = 0; document.querySelector('[data-stays]').scrollLeft = 0; })()",
+  "rects": {
+    "request": ".bubble",
+    "checks": ".search",
+    "bestStay": "[data-stay='heron-point']",
+    "recommendation": ".reply",
+    "bookingQuestion": ".reply.ask",
+    "book": "[data-action='book']",
+    "composer": ".dock .composer"
+  },
+  "steps": [
+    {
+      "rects": "stay-found-unbooked"
+    },
+    {
+      "capture": "laptop-stay-found",
+      "rect": [
+        0,
+        0,
+        1440,
+        900
+      ],
+      "scale": 2
+    }
+  ]
+}

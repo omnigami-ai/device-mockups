@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-02",
+  "status": "selected defaults promoted; run 2 ready when authorized; not started",
+  "looks": [
+    {
+      "id": "L1",
+      "size": "16:9",
+      "values": {
+        "dir": "L1",
+        "size": "16:9"
+      },
+      "overrides": {},
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "file": "L1/L1.png",
+      "sha256": "e37bf35f717ac79e7bbe398480b55ca439fbb4de92ba03765a82044f10ff79aa",
+      "review": "L1/360.png",
+      "reviewSha256": "d18357c092ab7309484decde49d3cb59ba6c294f24c9cb4073444d974048bae9",
+      "checks": [
+        "--check",
+        "--check-fresh",
+        "--stress"
+      ]
+    },
+    {
+      "id": "L2",
+      "size": "16:9",
+      "values": {
+        "dir": "L2",
+        "size": "16:9",
+        "heroHierarchy": "no-actions"
+      },
+      "overrides": {},
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "file": "L2/L2.png",
+      "sha256": "98f0ca41024e292e0f4551af2e70b096d1917a6aff1566851af7bfbd3a0c3b5c",
+      "review": "L2/360.png",
+      "reviewSha256": "9cdf7b04c08019a244a38e128d10f5b6304190996c7da89604991787ee04fd65",
+      "checks": [
+        "--check",
+        "--check-fresh",
+        "--stress"
+      ]
+    },
+    {
+      "id": "T2",
+      "size": "9:16",
+      "values": {
+        "dir": "T2",
+        "size": "9:16"
+      },
+      "overrides": {},
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "file": "T2/T2.png",
+      "sha256": "489810217f75afd38393cca391e46cccf6d206ba448090f0fafa0f2979a654ff",
+      "review": "T2/360.png",
+      "reviewSha256": "7e641b4658766494a7246bf26f377da28c2a0a62a8258e15171f9fcb6c8e021e",
+      "checks": [
+        "--check",
+        "--check-fresh",
+        "--stress"
+      ]
+    },
+    {
+      "id": "T1-line",
+      "size": "9:16",
+      "values": {
+        "dir": "T1-line",
+        "size": "9:16"
+      },
+      "overrides": {},
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "file": "T1-line/T1-line.png",
+      "sha256": "fb622e47797a3b022e832eba4bc1d01e6e5620201bb1fa50827add768aa1fc9f",
+      "review": "T1-line/360.png",
+      "reviewSha256": "bb99ae2eeddc2c3be8c76f2dff9a0de65cca3e8846743f535aa4742cc8f80c70",
+      "checks": [
+        "--check",
+        "--check-fresh",
+        "--stress"
+      ]
+    }
+  ],
+  "failures": [],
+  "unchangedOutputPngs": 27,
+  "selectedPicks": [
+    {
+      "file": "skills/device-mockups/reference/out/L2/L2.png",
+      "selectedReviewFile": "out/proof/device-mockups/r2-evidence/no-actions/L2/L2.png",
+      "byteIdentical": true,
+      "sha256": "98f0ca41024e292e0f4551af2e70b096d1917a6aff1566851af7bfbd3a0c3b5c"
+    },
+    {
+      "file": "skills/device-mockups/reference/out/L2/360.png",
+      "selectedReviewFile": "out/proof/device-mockups/r2-evidence/no-actions/L2/360.png",
+      "byteIdentical": true,
+      "sha256": "9cdf7b04c08019a244a38e128d10f5b6304190996c7da89604991787ee04fd65"
+    }
+  ],
+  "freshReaderGate": "unverified here; mandatory in second-company proof",
+  "independentSecondCompanyPass": false
+}

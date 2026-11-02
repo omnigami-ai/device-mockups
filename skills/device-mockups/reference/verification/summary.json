@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "referenceLooks": 4,
+  "requiredFlags": [
+    "--check",
+    "--check-fresh",
+    "--stress"
+  ],
+  "isolatedCopy": true,
+  "isolatedOutputsMatch": true,
+  "dependenciesInstalledInIsolatedCopy": true,
+  "sourceOutsidePackageRequested": false,
+  "mixedOrder": true,
+  "opaqueRGB": true,
+  "matchingExportDimensions": true,
+  "stressFailures": 0,
+  "approvedPixelsPreserved": true,
+  "handPlateRebuildMatches": null,
+  "secondCompanyRunStarted": false
+}

@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:4403/app/#/",
+  "viewport": [
+    440,
+    897
+  ],
+  "ready": ".composer.big textarea",
+  "init": "(async () => { await document.fonts.ready; await Promise.all([...document.images].map(im => im.decode())); })()",
+  "rects": {
+    "request": ".composer.big textarea",
+    "send": ".composer.big .send",
+    "resultCard": ".stay.best",
+    "answer": ".reply",
+    "book": ".acts .pill.dark",
+    "thread": ".thread"
+  },
+  "steps": [
+    {
+      "click": "[data-action=\"suggest\"][data-i=\"0\"]"
+    },
+    {
+      "rects": "request-ready-to-send"
+    },
+    {
+      "capture": "phone-request-ready",
+      "rect": [
+        0,
+        0,
+        440,
+        897
+      ],
+      "scale": 3
+    },
+    {
+      "click": ".composer.big .send"
+    },
+    {
+      "wait": 2400
+    },
+    {
+      "eval": "(async () => { await Promise.all([...document.images].map(im => im.decode())); document.querySelector('.thread').scrollTop = 0; })()"
+    },
+    {
+      "rects": "stays-found-unbooked"
+    },
+    {
+      "capture": "phone-stays-found",
+      "rect": [
+        0,
+        0,
+        440,
+        897
+      ],
+      "scale": 3
+    }
+  ]
+}

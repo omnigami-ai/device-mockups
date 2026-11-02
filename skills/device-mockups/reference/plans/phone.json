@@ -1,0 +1,35 @@
+{
+  "url": "http://localhost:4403/app/#/stay/heron-point",
+  "viewport": [
+    440,
+    897
+  ],
+  "ready": ".stay-page .price-box .pill",
+  "init": "(async () => { await document.fonts.ready; await Promise.all([...document.images].map(image => image.decode())); const page = document.querySelector('.stay-page'); page.scrollTop = page.scrollHeight; })()",
+  "rects": {
+    "photo": ".big",
+    "location": ".eyebrow",
+    "stayName": ".page h2",
+    "ratingAndCapacity": ".meta",
+    "whyItFits": ".why",
+    "features": ".feats",
+    "host": ".host",
+    "priceAndDates": ".price-box",
+    "askToBook": ".price-box .pill"
+  },
+  "steps": [
+    {
+      "rects": "stay-detail-unbooked"
+    },
+    {
+      "capture": "phone-stay-detail",
+      "rect": [
+        0,
+        0,
+        440,
+        897
+      ],
+      "scale": 3
+    }
+  ]
+}
