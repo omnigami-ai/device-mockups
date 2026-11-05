@@ -144,7 +144,7 @@ async function prepare3d() {
   screenCanvas = document.createElement('canvas'); screenCanvas.width = 1400; screenCanvas.height = 2948;
   screenCtx = screenCanvas.getContext('2d', { willReadFrequently: true });
   screenTex = new THREE.CanvasTexture(screenCanvas); screenTex.colorSpace = THREE.SRGBColorSpace; screenTex.anisotropy = 16;
-  const ip = (await new GLTFLoader().loadAsync('assets/devices/iphone-16-pro-max.glb')).scene;
+  const ip = (await new GLTFLoader().loadAsync('assets/devices/iphone-16-pro-max.gltf')).scene;
   tallPhones.push(makeTallPhone(ip), makeTallPhone(ip));
   ip.traverse((m) => {
     if (!m.isMesh) return; m.frustumCulled = false;
@@ -161,7 +161,7 @@ async function prepare3d() {
   LIGHT_PHONE_SCALE = 0.48 * phoneUnit.scale.x / freshHeight; DARK_PHONE_SCALE = phoneUnit.scale.x / freshHeight;
   // the laptop
   if (FAMILY === 'light') {
-  const air = (await new GLTFLoader().loadAsync('assets/devices/macbook-air-15.glb')).scene;
+  const air = (await new GLTFLoader().loadAsync('assets/devices/macbook-air-15.gltf')).scene;
   lapCanvas = document.createElement('canvas'); lapCanvas.width = 2880; lapCanvas.height = 1800; lapCtx = lapCanvas.getContext('2d', { willReadFrequently: true });
   lapTex = new THREE.CanvasTexture(lapCanvas); lapTex.colorSpace = THREE.SRGBColorSpace; lapTex.anisotropy = 16;
   laptop = new THREE.Group(); hinge = new THREE.Group(); lid = new THREE.Group();

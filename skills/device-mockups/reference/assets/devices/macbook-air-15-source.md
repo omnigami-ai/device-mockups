@@ -19,3 +19,7 @@ product's capture in the film); parts named for the device contract (`SCREEN`, `
 `LID_GASKET`, `CAMERA_*`, `BASE_*`); the whole laptop pitched about its hinge by the lid's 20.07° lean so the
 screen faces glTF +Z exactly. Hinge line at glTF (y −0.0073, z −0.1142); the lid opens 110.07° from the base.
 Apple product names describe the device shape only; no Apple mark, wallpaper or screen ships.
+
+Shipped as `macbook-air-15.gltf` with `macbook-air-15.bin` and its textures (`macbook-air-15-<n>.png|jpg`), split byte for byte from the exported
+.glb by `tools/split-glb.py` (2026-11-05) so no file passes the 5 MiB limit of Anthropic's plugin directory. After a
+new export, split again and delete the .glb.

@@ -17,3 +17,7 @@ Changes (Blender 5.2, `prepare-phone.py` beside this file): node transforms bake
 the screen's wallpaper image dropped (the screen gets a plain material, replaced by the product's capture in the film);
 the screen and its cover glass named `SCREEN` and `GLASS`; turned so the screen faces glTF +Z, upright. Apple product
 names describe the device shape only; no Apple mark, wallpaper or screen ships.
+
+Shipped as `iphone-16-pro-max.gltf` with `iphone-16-pro-max.bin` and its textures (`iphone-16-pro-max-<n>.png|jpg`), split byte for byte from the exported
+.glb by `tools/split-glb.py` (2026-11-05) so no file passes the 5 MiB limit of Anthropic's plugin directory. After a
+new export, split again and delete the .glb.
