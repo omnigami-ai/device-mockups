@@ -357,7 +357,7 @@ function heroLight() {
   if ((VALUES.heroHierarchy ?? 'no-actions') !== 'no-actions')
     throw Error('L2 uses no-actions; shorten the product line and sentence instead of adding pictured controls.');
   g.save(); g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle=OST.ink;
-  g.font=`400 84px "${PRODUCT.display}"`; g.letterSpacing='-0.8px';
+  g.font=`${PRODUCT.displayWeight ?? 400} 84px "${PRODUCT.display}"`; g.letterSpacing='-0.8px';
   fitText(OST.line,W/2,194,W*0.88,64,'headline');
   g.font=`400 64px "${PRODUCT.ui}"`; g.letterSpacing='0px'; g.fillStyle=PRODUCT.muted;
   fitText(VALUES.description,W/2,278,W*0.88,64,'description');
@@ -407,7 +407,7 @@ function tallLight() {
   if (VALUES.contactShadow !== false) drawContact(g,front ? tallPhones.map(p=>p.root) : [tallPhones[0].root],camera,W,H,DIR);
   g.drawImage(sil, 0, 0);
   if (words) {
-    g.save(); g.font = `400 76px "${PRODUCT.display}"`; g.letterSpacing = '-0.8px';
+    g.save(); g.font = `${PRODUCT.displayWeight ?? 400} 76px "${PRODUCT.display}"`; g.letterSpacing = '-0.8px';
     g.textAlign = 'center'; g.fillStyle = OST.ink; fitText(OST.line, W / 2, H * 0.135 + g.measureText('H').actualBoundingBoxAscent / 2, W * 0.88); g.restore();
   }
 }

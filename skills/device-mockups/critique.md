@@ -24,7 +24,8 @@ passes. A disclosed compromise is still a defect. Mark missing review evidence u
    collision. A reader reads **both outside-screen lines unprompted at 360**, before seeing the original.
    L2 has no pictured buttons or action fields. Measure final fitted size × 360/export width: both L2 fields
    must be at least **12 px**. Use the product's short line and sentence, each within 26 characters; the
-   numeric floor does not replace the actual read. The no-actions hierarchy is the default.
+   numeric floor does not replace the actual read. The no-actions hierarchy is the default. The headline is in the
+   brand's display weight (`displayWeight`), never thinner than the sentence under it looks.
 6. **Delivery.** Every planned look has its exact-size opaque PNG, review copy and editable local source; commands,
    hashes and review are included. Model, font and hand notices accompany the delivery. No network dependencies.
 

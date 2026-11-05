@@ -23,7 +23,8 @@ reflective overlays. Draw CAMERA_GLASS last if retained. Use exact vertex boxes 
 projected from the actual low mesh; retain the dedicated laptop underside and foot layers. No hard offset
 shadow, floating base, shiny chrome or floor reflection.
 
-Use the product's own display face and one short line above a tall phone. L2 uses the selected `no-actions`
+Use the product's own display face, at the weight its brand sets display headings (`displayWeight`), and one short
+line above a tall phone. L2 uses the selected `no-actions`
 treatment: headline baseline 194 px, sentence baseline 278 px, unchanged device block below. Its headline
 starts at 84 px, sentence at 64 px, both within 88% of the width, with a 64 px fitted floor (12 px at 360).
 Keep both fields within 26 characters and shorten words rather than shrink below that floor. No buttons,

@@ -232,7 +232,10 @@ try {
     // judging motion (easing, overshoot, cuts inside a turn, text that vanishes) that sparse contact sheets can't show
     if (flag('review')) {
       const at = [...new Set([...meta.cuts.map((c) => +(c - 6 / fps).toFixed(3)), ...meta.keyTimes.map((k) => +(k - 6 / fps).toFixed(3))])]
-        .filter((t) => t >= 0 && t < meta.duration - 0.8).sort((a, b) => a - b).filter((t, i, all) => i === 0 || t - all[i - 1] > 0.3);
+        .filter((t) => t >= 0 && t < meta.duration - 0.8).sort((a, b) => a - b)
+        // spaced against the last strip kept (not the previous candidate), so a run of keys a few frames apart can't erase
+        // every later moment (a signal's arrival after its launch: Veyset proof run 2)
+        .reduce((kept, t) => (kept.length && t - kept.at(-1) <= 0.3 ? kept : [...kept, t]), []);
       const dir = path.join(outDir, `${name}-review`);
       await mkdir(dir, { recursive: true });
       for (const t0 of at) await tile(await stills('strip', Array.from({ length: 12 }, (_, i) => t0 + (2 * i) / fps)), 320, 6, path.join(dir, `${t0.toFixed(2).padStart(6, '0')}.png`));

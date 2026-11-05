@@ -93,6 +93,8 @@ A missing responsive layout is a product gap to report, not permission to invent
 In `mockups-work/product.js`, replace every Ostlery input: screen paths, name, words, colours, fonts and optional
 art. Screen keys are renderer slots, not instructions to keep the sample product. Every path must stay inside
 `mockups-work/`. Copy the user's font files with their licences and name them in `fonts`, `display` and `ui`.
+Set `displayWeight` to the weight the brand uses for its display headings (its brand guide or site CSS);
+left out, the headline is set at 400, which suits a display face drawn for it but looks thin in a text face.
 All outside-screen words live in `text` and `template.fields`; labels in captured UI stay the product's.
 Keep the renderer, device models, `devices.js`, `vendor/` and their licence notices.
 
