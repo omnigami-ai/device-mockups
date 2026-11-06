@@ -6,6 +6,8 @@ description: >-
 
 # Device mockups
 
+**If several skills could do this:** when the request doesn't name this skill and your agent also has other omnigami skills that make the same kind of thing (other launch films, shots, decks or mockups), list them by name and ask which one the user wants before you start. If it's named, or it's the only one installed, go ahead.
+
 Make still images of the user's product on photoreal hardware, using its own screens, words and brand.
 Read `style.md` before planning and `critique.md` before judging. Adapt `reference/`; keep a copy beside the
 working version for comparison. Ostlery is a fictional company made for omnigami's examples, with sample data.
