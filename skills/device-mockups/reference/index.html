@@ -197,7 +197,7 @@ function render3d() {
 function paintPhone(img, bar, barInk, px = screenCtx, tex = screenTex) { // the capture under a drawn status bar (the product's own colours)
   const PB = 40, BAR = 177;
   px.reset(); px.fillStyle = '#050506'; px.fillRect(0, 0, 1400, 2948);
-  px.save(); px.beginPath(); px.roundRect(PB, PB, 1320, 2868, 150); px.clip();
+  px.save(); px.beginPath(); px.roundRect(PB, PB, 1320, 2868, 176); px.clip(); // concentric with the glass: its 216 px corners less the 40 px border
   px.fillStyle = bar; px.fillRect(PB, PB, 1320, 2868); px.drawImage(img, PB, PB + BAR);
   px.fillStyle = barInk; px.font = `600 51px "${PRODUCT.ui}"`; px.textAlign = 'center'; px.fillText('9:41', PB + 246, PB + 111); px.textAlign = 'left';
   const bx = PB + 1098, by = PB + 75;
