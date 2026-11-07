@@ -1,7 +1,9 @@
 ---
 name: device-mockups
 description: >-
-  Make photoreal device stills from a product’s real desktop and phone screens on a pale studio ground: a frontal laptop and phone, an optional product headline, or a tall phone and input/result pair. Delivers editable self-contained HTML and PNGs at 1920 × 1080 and 1080 × 1920. Use for light product mockups, website hero artwork, device stills or social product images.
+  Device mockups from your product's real screens: photoreal laptop and phone stills on a pale studio ground, with an
+  optional headline. Editable HTML and PNGs, wide and tall. Use for device mockups, iPhone or MacBook mockups, website
+  hero images, screenshots in devices or social product images.
 ---
 
 # Device mockups
